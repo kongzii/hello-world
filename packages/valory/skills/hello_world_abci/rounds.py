@@ -39,6 +39,7 @@ from packages.valory.skills.hello_world_abci.payloads import (
     RegistrationPayload,
     ResetPayload,
     SelectKeeperPayload,
+    PrintMessageCountPayload,
 )
 
 
@@ -67,6 +68,15 @@ class SynchronizedData(
         return cast(
             List[str],
             self.db.get_strict("printed_messages"),
+        )
+
+    @property
+    def print_count(self) -> int:
+        """Get the count of how many times the service executed PrintMessageRound."""
+
+        return cast(
+            int,
+            self.db.get_strict("print_count"),
         )
 
 
@@ -160,6 +170,10 @@ class ResetAndPauseRound(CollectSameUntilThresholdRound, HelloWorldABCIAbstractR
         return None
 
 
+class PrintMessageCountRound(CollectSameUntilThresholdRound):
+    payload_class = PrintMessageCountPayload
+
+
 class HelloWorldAbciApp(AbciApp[Event]):
     """HelloWorldAbciApp
 
@@ -194,6 +208,8 @@ class HelloWorldAbciApp(AbciApp[Event]):
     """
 
     initial_round_cls: AppState = RegistrationRound
+    # TODO: Question: Why is this defined here and also in fsm_specification.yaml?
+    # packages/valory/skills/hello_world_abci/fsm_specification.yaml
     transition_function: AbciAppTransitionFunction = {
         RegistrationRound: {
             Event.DONE: CollectRandomnessRound,
@@ -209,6 +225,10 @@ class HelloWorldAbciApp(AbciApp[Event]):
             Event.ROUND_TIMEOUT: RegistrationRound,
         },
         PrintMessageRound: {
+            Event.DONE: PrintMessageCountRound,
+            Event.ROUND_TIMEOUT: RegistrationRound,
+        },
+        PrintMessageCountRound: {
             Event.DONE: ResetAndPauseRound,
             Event.ROUND_TIMEOUT: RegistrationRound,
         },

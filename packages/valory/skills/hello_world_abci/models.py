@@ -21,6 +21,8 @@
 
 from typing import Any
 
+from aea.skills.base import SkillContext
+
 from packages.valory.skills.abstract_round_abci.models import ApiSpecs, BaseParams
 from packages.valory.skills.abstract_round_abci.models import (
     BenchmarkTool as BaseBenchmarkTool,
@@ -44,12 +46,17 @@ class SharedState(BaseSharedState):
 
     abci_app_cls = HelloWorldAbciApp
 
+    def __init__(self, *args: Any, skill_context: SkillContext, **kwargs: Any) -> None:
+        """Initialize the shared state object."""
+        self.owner_address: str | None = None
+        super().__init__(*args, skill_context=skill_context, **kwargs)
+
     def setup(self) -> None:
         """Set up."""
         super().setup()
-        HelloWorldAbciApp.event_to_timeout[
-            Event.ROUND_TIMEOUT
-        ] = self.context.params.round_timeout_seconds
+        HelloWorldAbciApp.event_to_timeout[Event.ROUND_TIMEOUT] = (
+            self.context.params.round_timeout_seconds
+        )
         HelloWorldAbciApp.event_to_timeout[Event.RESET_TIMEOUT] = (
             self.context.params.reset_pause_duration + MARGIN
         )
@@ -61,6 +68,7 @@ class HelloWorldParams(BaseParams):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the parameters."""
         self.hello_world_string: str = self._ensure("hello_world_message", kwargs, str)
+        self.owner_address: str = self._ensure("owner_address", kwargs, str)
         super().__init__(*args, **kwargs)
 
 
