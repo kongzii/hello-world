@@ -162,7 +162,8 @@ class ResetAndPauseRound(CollectSameUntilThresholdRound, HelloWorldABCIAbstractR
     def end_block(self) -> Optional[Tuple[BaseSynchronizedData, Event]]:
         """Process the end of the block."""
         if self.threshold_reached:
-            return self.synchronized_data.create(), Event.DONE
+            # TODO: Question: Seems like we can just not re-create the synchronized data here, to keep the print_count alive. But is that the right approach?
+            return self.synchronized_data, Event.DONE
         if not self.is_majority_possible(
             self.collection, self.synchronized_data.nb_participants
         ):
@@ -178,10 +179,11 @@ class PrintMessageCountRound(
     def end_block(self) -> Optional[Tuple[BaseSynchronizedData, Event]]:
         """Process the end of the block."""
         if self.threshold_reached:
+            # TODO: Question: Why not have most voted for the whole `PrintMessageCountPayload`? But instead it's per-value?
+            # Theory: Agent don't have to agree on the whole payload, so we take the majority per-field.
+            most_voted_print_count = self.most_voted_payload_values[0]
             synchronized_data = self.synchronized_data.update(
-                print_count=cast(
-                    PrintMessageCountPayload, self.most_voted_payload_values
-                ).print_count,
+                print_count=most_voted_print_count,
                 synchronized_data_class=SynchronizedData,
             )
             return synchronized_data, Event.DONE
