@@ -31,6 +31,14 @@ Example of an autonomous service using the [Open Autonomy](https://docs.autonola
 
 ## Deploy the service
 
+- Lock packages
+
+      autonomy packages lock
+
+- Push
+
+      autonomy push-all
+
 - Fetch the service from the local registry:
 
       autonomy fetch valory/hello_world:0.1.0 --local --service --alias hello_world_service; cd hello_world_service
@@ -50,7 +58,7 @@ Example of an autonomous service using the [Open Autonomy](https://docs.autonola
 
 - Build the deployment (Docker Compose):
 
-      autonomy deploy build ./keys.json -ltm
+      autonomy deploy build ../keys.json -ltm
 
 - Run the deployment:
 
