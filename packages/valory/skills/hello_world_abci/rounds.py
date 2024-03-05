@@ -175,6 +175,18 @@ class PrintMessageCountRound(
 ):
     payload_class = PrintMessageCountPayload
 
+    def end_block(self) -> Optional[Tuple[BaseSynchronizedData, Event]]:
+        """Process the end of the block."""
+        if self.threshold_reached:
+            synchronized_data = self.synchronized_data.update(
+                print_count=cast(
+                    PrintMessageCountPayload, self.most_voted_payload_values
+                ).print_count,
+                synchronized_data_class=SynchronizedData,
+            )
+            return synchronized_data, Event.DONE
+        return None
+
 
 class HelloWorldAbciApp(AbciApp[Event]):
     """HelloWorldAbciApp
