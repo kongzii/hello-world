@@ -36,10 +36,7 @@ Example of an autonomous service using the [Open Autonomy](https://docs.autonola
       autonomy fetch valory/hello_world:0.1.0 --local --service --alias hello_world_service; cd hello_world_service
 
 - Build the agent's service image:
-      # TODO: Question: I need to run in a dev mode.
-      # So I code my stuff normally and store it in Github, once it works I upload it to IPFS and then it can be used on Olas?
-      # Is something forbiding me to skip the IPFS part and just run it?
-      autonomy build-image --dev
+      autonomy build-image
 
 - Generate testing keys for 4 agents:
 
@@ -53,7 +50,7 @@ Example of an autonomous service using the [Open Autonomy](https://docs.autonola
 
 - Build the deployment (Docker Compose):
 
-      autonomy deploy build ../keys.json -ltm
+      autonomy deploy build ./keys.json -ltm
 
 - Run the deployment:
 
