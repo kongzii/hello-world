@@ -76,7 +76,7 @@ class SynchronizedData(
 
         return cast(
             int,
-            self.db.get_strict("print_count"),
+            self.db.get("print_count", 0),
         )
 
 
