@@ -170,7 +170,9 @@ class ResetAndPauseRound(CollectSameUntilThresholdRound, HelloWorldABCIAbstractR
         return None
 
 
-class PrintMessageCountRound(CollectSameUntilThresholdRound):
+class PrintMessageCountRound(
+    CollectSameUntilThresholdRound, HelloWorldABCIAbstractRound
+):
     payload_class = PrintMessageCountPayload
 
 
