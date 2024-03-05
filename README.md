@@ -44,6 +44,7 @@ Example of an autonomous service using the [Open Autonomy](https://docs.autonola
       autonomy fetch valory/hello_world:0.1.0 --local --service --alias hello_world_service; cd hello_world_service
 
 - Build the agent's service image:
+
       autonomy build-image
 
 - Generate testing keys for 4 agents:
