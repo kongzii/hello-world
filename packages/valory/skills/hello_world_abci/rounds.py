@@ -39,6 +39,7 @@ from packages.valory.skills.hello_world_abci.payloads import (
     RegistrationPayload,
     ResetPayload,
     SelectKeeperPayload,
+    PrintMessageCountPayload,
 )
 
 
@@ -67,6 +68,15 @@ class SynchronizedData(
         return cast(
             List[str],
             self.db.get_strict("printed_messages"),
+        )
+
+    @property
+    def print_count(self) -> int:
+        """Get the count of how many times the service executed PrintMessageRound."""
+
+        return cast(
+            int,
+            self.db.get("print_count", 0),
         )
 
 
@@ -160,6 +170,25 @@ class ResetAndPauseRound(CollectSameUntilThresholdRound, HelloWorldABCIAbstractR
         return None
 
 
+class PrintMessageCountRound(
+    CollectSameUntilThresholdRound, HelloWorldABCIAbstractRound
+):
+    payload_class = PrintMessageCountPayload
+
+    def end_block(self) -> Optional[Tuple[BaseSynchronizedData, Event]]:
+        """Process the end of the block."""
+        if self.threshold_reached:
+            # TODO: Question: Why not have most voted for the whole `PrintMessageCountPayload`? But instead it's per-value?
+            # Theory: Agent don't have to agree on the whole payload, so we take the majority per-field.
+            most_voted_print_count = self.most_voted_payload_values[0]
+            synchronized_data = self.synchronized_data.update(
+                print_count=most_voted_print_count,
+                synchronized_data_class=SynchronizedData,
+            )
+            return synchronized_data, Event.DONE
+        return None
+
+
 class HelloWorldAbciApp(AbciApp[Event]):
     """HelloWorldAbciApp
 
@@ -194,6 +223,9 @@ class HelloWorldAbciApp(AbciApp[Event]):
     """
 
     initial_round_cls: AppState = RegistrationRound
+    cross_period_persisted_keys = frozenset({"print_count"})
+    # TODO: Question: Why is this defined here and also in fsm_specification.yaml?
+    # packages/valory/skills/hello_world_abci/fsm_specification.yaml
     transition_function: AbciAppTransitionFunction = {
         RegistrationRound: {
             Event.DONE: CollectRandomnessRound,
@@ -209,6 +241,10 @@ class HelloWorldAbciApp(AbciApp[Event]):
             Event.ROUND_TIMEOUT: RegistrationRound,
         },
         PrintMessageRound: {
+            Event.DONE: PrintMessageCountRound,
+            Event.ROUND_TIMEOUT: RegistrationRound,
+        },
+        PrintMessageCountRound: {
             Event.DONE: ResetAndPauseRound,
             Event.ROUND_TIMEOUT: RegistrationRound,
         },

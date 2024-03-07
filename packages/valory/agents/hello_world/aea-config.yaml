@@ -70,6 +70,7 @@ models:
   params:
     args:
       hello_world_message: ${str:HELLO_WORLD!}
+      owner_address: ${str:OWNER_ADDRESS}
       reset_pause_duration: ${int:10}
       service_registry_address: ${str:null}
       share_tm_config_on_startup: ${bool:false}

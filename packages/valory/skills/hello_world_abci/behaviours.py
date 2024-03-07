@@ -34,12 +34,14 @@ from packages.valory.skills.hello_world_abci.payloads import (
     RegistrationPayload,
     ResetPayload,
     SelectKeeperPayload,
+    PrintMessageCountPayload,
 )
 from packages.valory.skills.hello_world_abci.rounds import (
     CollectRandomnessRound,
     HelloWorldAbciApp,
     PrintMessageRound,
     RegistrationRound,
+    PrintMessageCountRound,
     ResetAndPauseRound,
     SelectKeeperRound,
     SynchronizedData,
@@ -49,12 +51,18 @@ from packages.valory.skills.hello_world_abci.rounds import (
 class HelloWorldABCIBaseBehaviour(BaseBehaviour, ABC):
     """Base behaviour behaviour for the Hello World abci skill."""
 
+    # TODO: Question: What's the difference between synchronized data and shared state?
     @property
     def synchronized_data(self) -> SynchronizedData:
         """Return the synchronized data."""
         return cast(
             SynchronizedData, cast(SharedState, self.context.state).synchronized_data
         )
+
+    @property
+    def shared_state(self) -> SharedState:
+        """Get the shared state."""
+        return cast(SharedState, self.context.state)
 
     @property
     def params(self) -> HelloWorldParams:
@@ -185,6 +193,12 @@ class PrintMessageBehaviour(HelloWorldABCIBaseBehaviour, ABC):
         - Go to the next behaviour (set done event).
         """
 
+        # TODO: Question: Shared state seems like something where agents should store shared information, why store the owner there and not just params?
+        if self.shared_state.owner_address is None:
+            self.shared_state.owner_address = self.params.owner_address
+        elif self.shared_state.owner_address != self.params.owner_address:
+            raise RuntimeError("Mismatch in owner addresses.")
+
         if (
             self.context.agent_address
             == self.synchronized_data.most_voted_keeper_address
@@ -192,6 +206,8 @@ class PrintMessageBehaviour(HelloWorldABCIBaseBehaviour, ABC):
             message = self.params.hello_world_string
         else:
             message = ":|"
+
+        message += f" - The owner's address is {self.shared_state.owner_address}"
 
         printed_message = f"Agent {self.context.agent_name} (address {self.context.agent_address}) in period {self.synchronized_data.period_count} says: {message}"
 
@@ -203,6 +219,25 @@ class PrintMessageBehaviour(HelloWorldABCIBaseBehaviour, ABC):
         yield from self.send_a2a_transaction(payload)
         yield from self.wait_until_round_end()
 
+        self.set_done()
+
+
+class PrintMessageRoundCountBehaviour(HelloWorldABCIBaseBehaviour):
+    """"""
+
+    matching_round = PrintMessageCountRound
+
+    def async_act(self) -> Generator:
+        current_value = self.synchronized_data.print_count
+        new_value = current_value + 1
+        payload = PrintMessageCountPayload(
+            sender=self.context.agent_address, print_count=new_value
+        )
+        message = f"The message has been printed {new_value} times."
+        print(f"Printed: {message}")
+        self.context.logger.info(f"Logged: {message}")
+        yield from self.send_a2a_transaction(payload)
+        yield from self.wait_until_round_end()
         self.set_done()
 
 
@@ -251,5 +286,6 @@ class HelloWorldRoundBehaviour(AbstractRoundBehaviour):
         CollectRandomnessBehaviour,  # type: ignore
         SelectKeeperBehaviour,  # type: ignore
         PrintMessageBehaviour,  # type: ignore
+        PrintMessageRoundCountBehaviour,  # type: ignore
         ResetAndPauseBehaviour,  # type: ignore
     }
