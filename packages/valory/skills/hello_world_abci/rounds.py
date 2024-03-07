@@ -162,8 +162,7 @@ class ResetAndPauseRound(CollectSameUntilThresholdRound, HelloWorldABCIAbstractR
     def end_block(self) -> Optional[Tuple[BaseSynchronizedData, Event]]:
         """Process the end of the block."""
         if self.threshold_reached:
-            # TODO: Question: Seems like we can just not re-create the synchronized data here, to keep the print_count alive. But is that the right approach?
-            return self.synchronized_data, Event.DONE
+            return self.synchronized_data.create(), Event.DONE
         if not self.is_majority_possible(
             self.collection, self.synchronized_data.nb_participants
         ):
@@ -224,6 +223,7 @@ class HelloWorldAbciApp(AbciApp[Event]):
     """
 
     initial_round_cls: AppState = RegistrationRound
+    cross_period_persisted_keys = frozenset({"print_count"})
     # TODO: Question: Why is this defined here and also in fsm_specification.yaml?
     # packages/valory/skills/hello_world_abci/fsm_specification.yaml
     transition_function: AbciAppTransitionFunction = {
